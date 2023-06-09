@@ -386,6 +386,7 @@ export default {
 <style lang="css" scoped>
 img.add-to-favorites {
   width: 20px;
+  cursor: pointer
 }
 img.favoriteAlready.add-to-favorites {
   filter: invert(64%) sepia(54%) saturate(1529%) hue-rotate(168deg)
