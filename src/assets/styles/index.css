@@ -87,7 +87,6 @@ button {
 .chart-wrapper {
   position: relative;
   width: 800px;
-  height: 300px;
   @media screen and (max-width: 820px) {
   width: 500px;
   }
