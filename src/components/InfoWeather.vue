@@ -1,5 +1,7 @@
 <template>
   <section>
+    <ModalPopup :cancel="cancelButton" :message="modalMessage" ref="modal" />
+
     <div class="autocomplete-wrap">
       <GMapAutocomplete
         ref="autocomplete"
@@ -11,12 +13,21 @@
       />
       <button
         class="search"
-        :disabled="disabledSearch || weatherItems.length === 5 || !cityInput || !countryInput"
+        :disabled="
+          disabledSearch ||
+          weatherItems.length === 5 ||
+          !cityInput ||
+          !countryInput
+        "
         @click="getWeather"
       >
         <img src="@/assets/icons/search.svg" />
       </button>
-      <button v-if="cityInput || countryInput" class="delete-button" @click="clear">
+      <button
+        v-if="cityInput || countryInput"
+        class="delete-button"
+        @click="clear"
+      >
         <span></span>
         <span class="two"></span>
       </button>
@@ -27,65 +38,86 @@
     </p>
 
     <div class="blocks" v-if="weatherItems.length">
-    <div
-      v-for="(weatherItem, index) in weatherItems"
-      :key="index"
-      class="weather-block"
-    >
-      <div class="action-btns">
-        <button
-          class="add to favorites"
-          @click="addToFavotires(weatherItem, index)"
-        >
-          <img src="@/assets/icons/save.svg" alt="" />
-        </button>
-        <button
-          class="delete-button"
-          v-if="weatherItems.length > 1"
-          @click="removeWeatherItem(index)"
-        >
-          <span></span>
-          <span class="two"></span>
-        </button>
-      </div>
-
-      <CardWeather :place="weatherItem.location" :data="weatherItem.data" />
-      <div v-if="hasChartData(weatherItem)">
-        <div class="chart-type">
-          <h3 :class="{ active: chartType === 'Day'}" @click="()=> chartType = 'Day'">Day</h3>
-          |
-          <h3 :class="{ active: chartType === '5Days'}" @click="()=> chartType = '5Days'">5 Days</h3>
+      <div
+        v-for="(weatherItem, index) in weatherItems"
+        :key="index"
+        class="weather-block"
+      >
+        <div class="action-btns">
+          <button
+            class="add to favorites"
+            @click="addToFavotires(weatherItem, index)"
+          >
+            <img src="@/assets/icons/save.svg" alt="" />
+          </button>
+          <button
+            class="delete-button"
+            v-if="weatherItems.length > 1"
+            @click="removeWeatherItem(index)"
+          >
+            <span></span>
+            <span class="two"></span>
+          </button>
         </div>
-        <LineChart :chartData="weatherItem.chartData" />
+
+        <CardWeather :place="weatherItem.location" :data="weatherItem.data" />
+        <div v-if="hasChartData(weatherItem)">
+          <div class="chart-type">
+            <h3
+              :class="{ active: weatherItem.chartType === 'Day' }"
+              @click="() => (weatherItem.chartType = 'Day')"
+            >
+              Day
+            </h3>
+            |
+            <h3
+              :class="{ active: weatherItem.chartType === '5Days' }"
+              @click="() => (weatherItem.chartType = '5Days')"
+            >
+              5 Days
+            </h3>
+          </div>
+          <div v-if="weatherItem.chartType === 'Day'">
+            <LineChart :chartData="weatherItem.chartData" />
+          </div>
+          <div v-else-if="weatherItem.chartType === '5Days'">
+            <LineChart :chartData="weatherItem.daysChartData" />
+          </div>
+        </div>
       </div>
     </div>
-    </div>
-    <h2 v-else>Nothing here<br>Add cities to your favorites on the Homepage</h2>
+    <h2 v-else>
+      Nothing here<br />Add cities to your favorites on the Homepage
+    </h2>
   </section>
 </template>
 
 <script>
 import LineChart from "@/components/LineChart.vue";
 import CardWeather from "@/components/CardWeather.vue";
+import ModalPopup from "@/components/ModalPopup.vue";
 
 export default {
   data() {
     return {
-      chartType: "Day",
       autocompleteOptions: {
         types: ["(cities)"],
         strictBounds: true,
       },
+      forecastChartData: [],
       disabledSearch: false,
       cityInput: "",
       countryInput: "",
       weatherItems: [],
       favoritesItems: [],
       notFound: false,
+      modalMessage: "Are you sure?",
+      cancelButton: true,
     };
   },
   created() {
     this.weatherItems = JSON.parse(localStorage.getItem("weatherItems")) || [];
+    this.favoritesItems = JSON.parse(localStorage.getItem("favoritesItems")) || [];
   },
   methods: {
     clear() {
@@ -132,9 +164,13 @@ export default {
               JSON.stringify(this.weatherItems)
             );
           } else {
-            alert("City already added");
+            this.modalMessage =
+              "City already added";
+            this.cancelButton = false;
+            await this.$refs.modal.openModal();
           }
         }
+
         this.cityInput = "";
         this.countryInput = "";
         this.$refs.autocomplete.$el.value = "";
@@ -162,7 +198,10 @@ export default {
               data.coord.lon,
               apiKey
             ),
+            daysChartData: await this.fetch5DaysData(city, country, apiKey),
+            chartType: "Day",
           };
+
           return weatherData;
         } else {
           this.handleError(data);
@@ -200,33 +239,100 @@ export default {
         return null;
       }
     },
-    removeWeatherItem(index) {
-      this.weatherItems.splice(index, 1);
-      localStorage.setItem("weatherItems", JSON.stringify(this.weatherItems));
-    },
-    addToFavotires(item, index) {
-      if(this.favoritesItems.length < 6) {
-      const existingWeatherData = this.favoritesItems.find(
-        (i) => JSON.stringify(i) === JSON.stringify(item)
-      );
+    async fetch5DaysData(city, country, apiKey) {
+      try {
+        const url = `https://api.openweathermap.org/data/2.5/forecast?q=${city},${country}&units=metric&appid=${apiKey}`;
 
-      if (!existingWeatherData) {
-        this.favoritesItems.unshift(item);
-        localStorage.setItem(
-          "favoritesItems",
-          JSON.stringify(this.favoritesItems)
-        );
-      } else {
-        alert("City already added. Do you want remove it from favorites?");
-        this.favoritesItems.splice(index, 1);
-        localStorage.setItem(
-          "favoritesItems",
-          JSON.stringify(this.favoritesItems)
-        );
+        const response = await fetch(url);
+        const forecastData = await response.json();
+        if (response.ok) {
+          const dailyForecasts = {};
+          let timeArray = [];
+          let temperatureArray = [];
+          forecastData.list.forEach((item) => {
+            const date = item.dt_txt.split(" ")[0];
+
+            if (!dailyForecasts[date]) {
+              dailyForecasts[date] = {
+                temperatures: [],
+                description: item.weather[0].description,
+              };
+            }
+
+            dailyForecasts[date].temperatures.push(item.main.temp);
+          });
+
+          for (const date in dailyForecasts) {
+            const temperatures = dailyForecasts[date].temperatures;
+            const averageTemperature = (
+              temperatures.reduce((sum, temp) => sum + temp, 0) /
+              temperatures.length
+            ).toFixed(0);
+            const day = new Date(date).getDate();
+            timeArray.push(day);
+            temperatureArray.push(averageTemperature);
+          }
+          const forecasts = {
+            time: timeArray,
+            temperature: temperatureArray,
+          };
+          return forecasts;
+        } else {
+          this.handleError(forecastData);
+          return null;
+        }
+      } catch (error) {
+        this.handleError(error);
+        return null;
       }
-    } else {
-      alert("There is a maximum number of favorites(5), remove one to add new ones");
-    }
+    },
+    async removeWeatherItem(index) {
+      try {
+        this.modalMessage = "Remove weather block?";
+        this.cancelButton = true;
+        await this.$refs.modal.openModal();
+        this.weatherItems.splice(index, 1);
+        localStorage.setItem("weatherItems", JSON.stringify(this.weatherItems));
+      } catch (error) {
+        console.log("Action canceled");
+        return 0;
+      }
+    },
+    async addToFavotires(item, index) {
+      if (this.favoritesItems.length < 5) {
+        const existingWeatherData = this.favoritesItems.find(
+          (i) => JSON.stringify(i) === JSON.stringify(item)
+        );
+
+        if (!existingWeatherData) {
+          this.favoritesItems.unshift(item);
+          localStorage.setItem(
+            "favoritesItems",
+            JSON.stringify(this.favoritesItems)
+          );
+        } else {
+          try {
+            this.modalMessage =
+              "City is already added. Do you want remove it from favorites?";
+            this.cancelButton = true;
+            await this.$refs.modal.openModal();
+            this.favoritesItems.splice(index, 1);
+            localStorage.setItem(
+              "favoritesItems",
+              JSON.stringify(this.favoritesItems)
+            );
+          } catch (error) {
+            console.log("Action canceled");
+            return 0;
+          }
+        }
+      } else {
+        this.modalMessage =
+          "There is a maximum number of favorites (5). Remove one to add new ones.";
+        this.cancelButton = false;
+        await this.$refs.modal.openModal();
+        return 0;
+      }
     },
     hasChartData(weatherItem) {
       return (
@@ -236,28 +342,12 @@ export default {
       );
     },
   },
-  components: { CardWeather, LineChart },
+  components: { CardWeather, LineChart, ModalPopup },
 };
 </script>
 
-<style lang="css" scoped>
 
-.chart-type {
-  display: flex;
-  align-items: center;
-}
-.chart-type h3 {
-  cursor: pointer;
-  color: #2c3e50;
-  margin-right: 10px;
-}
-.chart-type h3.active{
-  color: #d0dbff;
-}
-.chart-type h3 + h3 {
-  margin-right: 0;
-  margin-left: 10px;
-}
+<style lang="css" scoped>
 .search:disabled {
   opacity: 0.5;
   cursor: none;
@@ -307,7 +397,7 @@ button.add.to.favorites,
 
   border: 1px solid #ccc;
   border-radius: 20px;
-  
+
   width: 100%;
   max-width: 150px;
   padding: 10px 40px 10px 15px;

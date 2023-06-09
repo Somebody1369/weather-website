@@ -48,8 +48,23 @@ button {
     max-width: 1000px;
     margin-bottom: 30px;
     padding: 30px 30px 40px 30px;
-    /* background-color: rgba(157, 180, 255, 0.3); */
 
     border-radius: 20px;
   }
  
+  .chart-type {
+    display: flex;
+    align-items: center;
+  }
+  .chart-type h3 {
+    cursor: pointer;
+    color: #2c3e50;
+    margin-right: 10px;
+  }
+  .chart-type h3.active{
+    color: #d0dbff;
+  }
+  .chart-type h3 + h3 {
+    margin-right: 0;
+    margin-left: 10px;
+  }
