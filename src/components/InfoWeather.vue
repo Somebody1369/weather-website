@@ -45,7 +45,8 @@
       >
         <div class="action-btns">
           <button
-            class="add to favorites"
+            :class="{ favoriteAlready: isFavorite(weatherItem) }"
+            class="add-to-favorites"
             @click="addToFavotires(weatherItem, index)"
           >
             <img src="@/assets/icons/save.svg" alt="" />
@@ -117,9 +118,15 @@ export default {
   },
   created() {
     this.weatherItems = JSON.parse(localStorage.getItem("weatherItems")) || [];
-    this.favoritesItems = JSON.parse(localStorage.getItem("favoritesItems")) || [];
+    this.favoritesItems =
+      JSON.parse(localStorage.getItem("favoritesItems")) || [];
   },
   methods: {
+    isFavorite(weatherItem) {
+      return this.favoritesItems.some(
+        (item) => JSON.stringify(item) === JSON.stringify(weatherItem)
+      );
+    },
     clear() {
       this.cityInput = "";
       this.countryInput = "";
@@ -164,8 +171,7 @@ export default {
               JSON.stringify(this.weatherItems)
             );
           } else {
-            this.modalMessage =
-              "City already added";
+            this.modalMessage = "City already added";
             this.cancelButton = false;
             await this.$refs.modal.openModal();
           }
@@ -299,39 +305,39 @@ export default {
       }
     },
     async addToFavotires(item, index) {
-      if (this.favoritesItems.length < 5) {
-        const existingWeatherData = this.favoritesItems.find(
-          (i) => JSON.stringify(i) === JSON.stringify(item)
-        );
+      const existingWeatherData = this.favoritesItems.find(
+        (i) => JSON.stringify(i) === JSON.stringify(item)
+      );
 
-        if (!existingWeatherData) {
+      if (!existingWeatherData) {
+        if (this.favoritesItems.length < 5) {
           this.favoritesItems.unshift(item);
           localStorage.setItem(
             "favoritesItems",
             JSON.stringify(this.favoritesItems)
           );
         } else {
-          try {
-            this.modalMessage =
-              "City is already added. Do you want remove it from favorites?";
-            this.cancelButton = true;
-            await this.$refs.modal.openModal();
-            this.favoritesItems.splice(index, 1);
-            localStorage.setItem(
-              "favoritesItems",
-              JSON.stringify(this.favoritesItems)
-            );
-          } catch (error) {
-            console.log("Action canceled");
-            return 0;
-          }
+          this.modalMessage =
+            "There is a maximum number of favorites (5). Remove one to add new ones.";
+          this.cancelButton = false;
+          await this.$refs.modal.openModal();
+          return 0;
         }
       } else {
-        this.modalMessage =
-          "There is a maximum number of favorites (5). Remove one to add new ones.";
-        this.cancelButton = false;
-        await this.$refs.modal.openModal();
-        return 0;
+        try {
+          this.modalMessage =
+            "City is already added. Do you want remove it from favorites?";
+          this.cancelButton = true;
+          await this.$refs.modal.openModal();
+          this.favoritesItems.splice(index, 1);
+          localStorage.setItem(
+            "favoritesItems",
+            JSON.stringify(this.favoritesItems)
+          );
+        } catch (error) {
+          console.log("Action canceled");
+          return 0;
+        }
       }
     },
     hasChartData(weatherItem) {
@@ -346,8 +352,11 @@ export default {
 };
 </script>
 
-
 <style lang="css" scoped>
+button.favoriteAlready.add-to-favorites img {
+  filter: invert(64%) sepia(54%) saturate(1529%) hue-rotate(168deg)
+    brightness(98%) contrast(102%);
+}
 .search:disabled {
   opacity: 0.5;
   cursor: none;
@@ -372,7 +381,7 @@ img {
 button img {
   width: 20px;
 }
-button.add.to.favorites,
+button.add-to-favorites,
 .delete-button {
   height: 20px;
   width: 20px;
