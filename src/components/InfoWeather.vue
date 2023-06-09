@@ -44,13 +44,13 @@
         class="weather-block"
       >
         <div class="action-btns">
-          <button
+          <img
             :class="{ favoriteAlready: isFavorite(weatherItem) }"
             class="add-to-favorites"
             @click="addToFavotires(weatherItem, index)"
-          >
-            <img src="@/assets/icons/save.svg" alt="" />
-          </button>
+            src="@/assets/icons/save.svg"
+            alt=""
+          />
           <button
             class="delete-button"
             v-if="weatherItems.length > 1"
@@ -127,10 +127,10 @@ export default {
       JSON.parse(localStorage.getItem("favoritesItems")) || [];
   },
   mounted() {
-    const isCityRequested = localStorage.getItem('isCityRequested');
+    const isCityRequested = localStorage.getItem("isCityRequested");
     if (!isCityRequested) {
       this.getCityByIP();
-      localStorage.setItem('isCityRequested', 'true');
+      localStorage.setItem("isCityRequested", "true");
     }
   },
   methods: {
@@ -141,7 +141,7 @@ export default {
         );
         const data = await response.json();
         // console.log(data.city, data.country_name, data.latitude, data.longitude);
-        if(response.ok) {
+        if (response.ok) {
           this.cityInput = data.city;
           this.countryInput = data.country_name;
           this.getWeather();
@@ -384,7 +384,10 @@ export default {
 </script>
 
 <style lang="css" scoped>
-button.favoriteAlready.add-to-favorites img {
+img.add-to-favorites {
+  width: 20px;
+}
+img.favoriteAlready.add-to-favorites {
   filter: invert(64%) sepia(54%) saturate(1529%) hue-rotate(168deg)
     brightness(98%) contrast(102%);
 }
@@ -407,7 +410,7 @@ h2 {
   margin: 0 0 0 auto;
 }
 img {
-  margin-left: 8px;
+  margin: 0 0 0 auto;
 }
 button img {
   width: 20px;
