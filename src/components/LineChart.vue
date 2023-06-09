@@ -1,7 +1,5 @@
 <template>
-  <section>
-    <canvas ref="chart"></canvas>
-  </section>
+  <canvas style="width: 100% !important" ref="chart"></canvas>
 </template>
 
 <script>
@@ -78,9 +76,13 @@ export default defineComponent({
 
 <style>
 canvas {
-  width: 100% !important;
-  max-width: 800px;
-  max-height: 400px;
   margin: 0 auto;
+  width: 100% !important;
+  display: block;
+  box-sizing: border-box;
+  height: auto !important;
+  @media screen and (max-width: 540px) {
+    width: 300px;
+  }
 }
 </style>

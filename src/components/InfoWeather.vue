@@ -78,10 +78,10 @@
               5 Days
             </h3>
           </div>
-          <div v-if="weatherItem.chartType === 'Day'">
+          <div v-if="weatherItem.chartType === 'Day'" class="chart-wrapper">
             <LineChart :chartData="weatherItem.chartData" />
           </div>
-          <div v-else-if="weatherItem.chartType === '5Days'">
+          <div v-else-if="weatherItem.chartType === '5Days'" class="chart-wrapper">
             <LineChart :chartData="weatherItem.daysChartData" />
           </div>
         </div>

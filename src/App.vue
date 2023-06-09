@@ -21,6 +21,10 @@ nav a {
   font-weight: bold;
   color: #2c3e50;
   margin-right: 10px;
+
+  @media screen and (max-width: 640px) {
+    font-size: 16px;
+  }
 }
 
 a + a {

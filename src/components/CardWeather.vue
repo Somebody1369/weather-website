@@ -17,13 +17,6 @@
         </div>
       </div>
     </div>
-    <!-- <ul v-if="forecasts.length">
-      <li v-for="forecast in forecasts" :key="forecast.date">
-        <p>{{ forecast.date }}</p>
-        <p>{{ forecast.averageTemperature.toFixed(0) }}</p>
-        <p>{{ forecast.description }}</p>
-      </li>
-    </ul> -->
   </section>
 </template>
 
@@ -65,7 +58,7 @@ section {
 h1 {
   font-size: 30px;
   font-weight: 400;
-  margin: 0 0 20px 0;
+  margin: 20px 0;
 
   text-align: center;
 }
