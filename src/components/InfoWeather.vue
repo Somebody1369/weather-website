@@ -7,48 +7,85 @@
         placeholder="Search the city"
         :options="autocompleteOptions"
         @place_changed="onPlaceChanged"
+        @keyup.enter="getWeather"
       />
-      <button class="search" :disabled="disabledSearch || weatherItems.length === 5" @click="getWeather">
+      <button
+        class="search"
+        :disabled="disabledSearch || weatherItems.length === 5 || !cityInput || !countryInput"
+        @click="getWeather"
+      >
         <img src="@/assets/icons/search.svg" />
       </button>
-      <button @click="clear">
+      <button v-if="cityInput || countryInput" class="delete-button" @click="clear">
         <span></span>
         <span class="two"></span>
       </button>
     </div>
     <h3 v-if="notFound">City not found</h3>
-    <p v-if="weatherItems.length === 5">There is a maximum number of weather blocks, remove one to add new ones</p>
+    <p v-if="weatherItems.length === 5">
+      There is a maximum number of weather blocks, remove one to add new ones
+    </p>
 
-    <div v-for="(weatherItem, index) in weatherItems" :key="index" class="weather-block">
-      <button class="delete-button" v-if="weatherItems.length > 1" @click="removeWeatherItem(index)">
-        <span></span>
-        <span class="two"></span>
-      </button>
+    <div class="blocks" v-if="weatherItems.length">
+    <div
+      v-for="(weatherItem, index) in weatherItems"
+      :key="index"
+      class="weather-block"
+    >
+      <div class="action-btns">
+        <button
+          class="add to favorites"
+          @click="addToFavotires(weatherItem, index)"
+        >
+          <img src="@/assets/icons/save.svg" alt="" />
+        </button>
+        <button
+          class="delete-button"
+          v-if="weatherItems.length > 1"
+          @click="removeWeatherItem(index)"
+        >
+          <span></span>
+          <span class="two"></span>
+        </button>
+      </div>
+
       <CardWeather :place="weatherItem.location" :data="weatherItem.data" />
       <div v-if="hasChartData(weatherItem)">
+        <div class="chart-type">
+          <h3 :class="{ active: chartType === 'Day'}" @click="()=> chartType = 'Day'">Day</h3>
+          |
+          <h3 :class="{ active: chartType === '5Days'}" @click="()=> chartType = '5Days'">5 Days</h3>
+        </div>
         <LineChart :chartData="weatherItem.chartData" />
       </div>
     </div>
+    </div>
+    <h2 v-else>Nothing here<br>Add cities to your favorites on the Homepage</h2>
   </section>
 </template>
 
 <script>
-import LineChart from "./LineChart.vue";
-import CardWeather from "./CardWeather.vue";
+import LineChart from "@/components/LineChart.vue";
+import CardWeather from "@/components/CardWeather.vue";
 
 export default {
   data() {
     return {
+      chartType: "Day",
       autocompleteOptions: {
-        types: ['(cities)'],
+        types: ["(cities)"],
         strictBounds: true,
       },
       disabledSearch: false,
       cityInput: "",
       countryInput: "",
       weatherItems: [],
+      favoritesItems: [],
       notFound: false,
     };
+  },
+  created() {
+    this.weatherItems = JSON.parse(localStorage.getItem("weatherItems")) || [];
   },
   methods: {
     clear() {
@@ -84,7 +121,19 @@ export default {
           apiKey
         );
         if (weatherData) {
-          this.weatherItems.unshift(weatherData);
+          const existingWeatherData = this.weatherItems.find(
+            (item) => item.location === weatherData.location
+          );
+
+          if (!existingWeatherData) {
+            this.weatherItems.unshift(weatherData);
+            localStorage.setItem(
+              "weatherItems",
+              JSON.stringify(this.weatherItems)
+            );
+          } else {
+            alert("City already added");
+          }
         }
         this.cityInput = "";
         this.countryInput = "";
@@ -105,11 +154,14 @@ export default {
             data: {
               icon: data.weather[0].icon,
               temperature: data.main.temp,
-              description: `${data.weather[0].main}, ${data.weather[0].description}`,
+              descriptionMain: data.weather[0].main,
+              description: data.weather[0].description,
             },
-           
-
- chartData: await this.fetchHourlyData(data.coord.lat, data.coord.lon, apiKey),
+            chartData: await this.fetchHourlyData(
+              data.coord.lat,
+              data.coord.lon,
+              apiKey
+            ),
           };
           return weatherData;
         } else {
@@ -136,9 +188,7 @@ export default {
                 minute: "2-digit",
               })
             ),
-            temperature: hourlyForecast.map((hour) =>
-              hour.temp.toFixed(0)
-            ),
+            temperature: hourlyForecast.map((hour) => hour.temp.toFixed(0)),
           };
           return chartData;
         } else {
@@ -152,6 +202,31 @@ export default {
     },
     removeWeatherItem(index) {
       this.weatherItems.splice(index, 1);
+      localStorage.setItem("weatherItems", JSON.stringify(this.weatherItems));
+    },
+    addToFavotires(item, index) {
+      if(this.favoritesItems.length < 6) {
+      const existingWeatherData = this.favoritesItems.find(
+        (i) => JSON.stringify(i) === JSON.stringify(item)
+      );
+
+      if (!existingWeatherData) {
+        this.favoritesItems.unshift(item);
+        localStorage.setItem(
+          "favoritesItems",
+          JSON.stringify(this.favoritesItems)
+        );
+      } else {
+        alert("City already added. Do you want remove it from favorites?");
+        this.favoritesItems.splice(index, 1);
+        localStorage.setItem(
+          "favoritesItems",
+          JSON.stringify(this.favoritesItems)
+        );
+      }
+    } else {
+      alert("There is a maximum number of favorites(5), remove one to add new ones");
+    }
     },
     hasChartData(weatherItem) {
       return (
@@ -166,46 +241,65 @@ export default {
 </script>
 
 <style lang="css" scoped>
-.weather-block {
-  padding: 10px 30px 60px 30px;
-  background-color: rgba(135, 206, 250, 0.2);
-  border-radius: 40px;
-}
 
-button {
+.chart-type {
+  display: flex;
+  align-items: center;
+}
+.chart-type h3 {
   cursor: pointer;
+  color: #2c3e50;
+  margin-right: 10px;
+}
+.chart-type h3.active{
+  color: #d0dbff;
+}
+.chart-type h3 + h3 {
+  margin-right: 0;
+  margin-left: 10px;
 }
 .search:disabled {
   opacity: 0.5;
+  cursor: none;
+}
+
+h2 {
+  color: white;
+  text-align: center;
+}
+
+.action-btns {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  max-width: 80px;
+  margin: 0 0 0 auto;
+}
+img {
+  margin-left: 8px;
+}
+button img {
+  width: 20px;
+}
+button.add.to.favorites,
+.delete-button {
+  height: 20px;
+  width: 20px;
 }
 
 .autocomplete-wrap {
   display: flex;
   align-items: center;
-}
-img {
-  margin-left: 15px;
-}
-button {
-  border: none;
-  outline: none;
-
-  color: white;
-  margin-left: 5px;
-  text-decoration: none;
-  background: transparent;
-}
-span {
-  width: 20px;
-  height: 1.5px;
-  display: block;
-  background-color: #ffff;
-  transform: rotate(-45deg);
-}
-span.two {
-  transform: rotate(45deg);
+  margin-bottom: 20px;
   position: relative;
-  top: -1px;
+}
+.autocomplete-wrap button.delete-button {
+  left: 160px;
+  position: absolute;
+}
+.autocomplete-wrap button.delete-button span {
+  width: 12px;
 }
 .my-autocomplete {
   background: black;
@@ -213,7 +307,10 @@ span.two {
 
   border: 1px solid #ccc;
   border-radius: 20px;
-  padding: 8px 12px;
+  
+  width: 100%;
+  max-width: 150px;
+  padding: 10px 40px 10px 15px;
 }
 .pac-container.pac-logo.hdpi {
   border-bottom-left-radius: 14px;
@@ -242,125 +339,3 @@ span.pac-item-query {
   height: 0px;
 }
 </style>
-
-<!-- <template>
-  <div>
-    <div>
-      <h2>Добавить блок погоды</h2>
-      <button @click="addWeatherBlock">+</button>
-    </div>
-
-    <div v-for="(weather, index) in weatherBlocks" :key="index">
-      <h3>Город: {{ weather.city }}</h3>
-
-      <div>
-        <input
-          type="text"
-          v-model="weather.citySearch"
-          @input="searchCities(weather)"
-          placeholder="Введите город"
-        />
-        <ul v-if="weather.showAutocomplete">
-          <li
-            v-for="(city, cityIndex) in weather.autocompleteCities"
-            :key="cityIndex"
-            @click="selectCity(weather, city)"
-          >
-            {{ city }}
-          </li>
-        </ul>
-      </div>
-
-      <div v-if="weather.weatherData">
-        <h4>Погода на сегодня</h4>
-        <p>Температура: {{ weather.weatherData.main.temp }}°C</p>
-        <p>Описание: {{ weather.weatherData.weather[0].description }}</p>
-      </div>
-
-      <div v-if="weather.weatherData && weather.weatherData.hourly">
-        <h4>Температура по часам</h4>
-      </div>
-
-      <button @click="removeWeatherBlock(index)">Удалить</button>
-    </div>
-  </div>
-</template>
-
-<script>
-import axios from "axios";
-
-export default {
-  data() {
-    return {
-      weatherBlocks: [
-        {
-          city: "",
-          citySearch: "",
-          showAutocomplete: false,
-          autocompleteCities: [],
-          weatherData: null,
-        },
-      ],
-      apiKey: "f22b2bdb33369bce2a29a33937dda689",
-    };
-  },
-  methods: {
-    addWeatherBlock() {
-      if (this.weatherBlocks.length < 5) {
-        this.weatherBlocks.push({
-          city: "",
-          citySearch: "",
-          showAutocomplete: false,
-          autocompleteCities: [],
-          weatherData: null,
-        });
-      } else {
-        alert("Максимальное количество блоков погоды достигнуто");
-      }
-    },
-    removeWeatherBlock(index) {
-      this.weatherBlocks.splice(index, 1);
-    },
-    searchCities(weather) {
-      if (weather.citySearch) {
-        axios
-          .get(
-            `https://api.openweathermap.org/data/2.5/find?q=${weather.citySearch}&appid=${this.apiKey}`
-          )
-          .then((response) => {
-            weather.autocompleteCities = response.data.list.map(
-              (city) => city.name
-            );
-            weather.showAutocomplete = true;
-          })
-          .catch((error) => {
-            console.error(error);
-          });
-      } else {
-        weather.showAutocomplete = false;
-        weather.autocompleteCities = [];
-      }
-    },
-    selectCity(weather, city) {
-      weather.city = city;
-      weather.citySearch = "";
-      weather.showAutocomplete = false;
-      weather.autocompleteCities = [];
-
-      this.fetchWeatherData(weather);
-    },
-    fetchWeatherData(weather) {
-      axios
-        .get(
-          `https://api.openweathermap.org/data/2.5/weather?q=${weather.city}&appid=${this.apiKey}&units=metric`
-        )
-        .then((response) => {
-          weather.weatherData = response.data;
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
-  },
-};
-</script> -->

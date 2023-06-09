@@ -1,22 +1,17 @@
 <template>
-  <section>
-    <div class="container">
-      <InfoWeather />
-    </div>
-  </section>
+  <div>
+    <InfoWeather />
+  </div>
 </template>
 <script>
 import InfoWeather from "@/components/InfoWeather.vue";
 export default {
   components: {
     InfoWeather,
-},
+  },
 };
 </script>
 <style lang="css" scoped>
-.container {
-  color: white;
-}
 .day-week {
   display: flex;
   width: 100%;

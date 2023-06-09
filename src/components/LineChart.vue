@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <section>
     <canvas ref="chart"></canvas>
-  </div>
+  </section>
 </template>
 
 <script>
@@ -34,7 +34,6 @@ export default defineComponent({
   },
   methods: {
     async renderChart() {
-      console.log(this.chartData.time);
       const ctx = this.$refs.chart.getContext("2d");
       new Chart(ctx, {
         type: "line",
