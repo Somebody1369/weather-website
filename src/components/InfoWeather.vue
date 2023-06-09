@@ -81,7 +81,10 @@
           <div v-if="weatherItem.chartType === 'Day'" class="chart-wrapper">
             <LineChart :chartData="weatherItem.chartData" />
           </div>
-          <div v-else-if="weatherItem.chartType === '5Days'" class="chart-wrapper">
+          <div
+            v-else-if="weatherItem.chartType === '5Days'"
+            class="chart-wrapper"
+          >
             <LineChart :chartData="weatherItem.daysChartData" />
           </div>
         </div>
@@ -110,6 +113,7 @@ export default {
       preloader: false,
       cityInput: "",
       countryInput: "",
+      userCity: [],
       weatherItems: [],
       favoritesItems: [],
       notFound: false,
@@ -122,7 +126,30 @@ export default {
     this.favoritesItems =
       JSON.parse(localStorage.getItem("favoritesItems")) || [];
   },
+  mounted() {
+    const isCityRequested = localStorage.getItem('isCityRequested');
+    if (!isCityRequested) {
+      this.getCityByIP();
+      localStorage.setItem('isCityRequested', 'true');
+    }
+  },
   methods: {
+    async getCityByIP() {
+      try {
+        const response = await fetch(
+          "https://api.ipgeolocation.io/ipgeo?apiKey=bb9c45bc76b34077bcdc04b0c73db009"
+        );
+        const data = await response.json();
+        // console.log(data.city, data.country_name, data.latitude, data.longitude);
+        if(response.ok) {
+          this.cityInput = data.city;
+          this.countryInput = data.country_name;
+          this.getWeather();
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    },
     isFavorite(weatherItem) {
       return this.favoritesItems.some(
         (item) => JSON.stringify(item) === JSON.stringify(weatherItem)
@@ -467,7 +494,7 @@ span.pac-item-query {
 }
 .loader:before,
 .loader:after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
 }
