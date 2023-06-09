@@ -36,7 +36,7 @@
     <p v-if="weatherItems.length === 5">
       There is a maximum number of weather blocks, remove one to add new ones
     </p>
-
+    <div class="loader" v-if="preloader">loading</div>
     <div class="blocks" v-if="weatherItems.length">
       <div
         v-for="(weatherItem, index) in weatherItems"
@@ -107,6 +107,7 @@ export default {
       },
       forecastChartData: [],
       disabledSearch: false,
+      preloader: false,
       cityInput: "",
       countryInput: "",
       weatherItems: [],
@@ -147,10 +148,12 @@ export default {
     },
     handleError(error) {
       console.error("Error fetching weather data:", error);
+      this.preloader = false;
       this.notFound = true;
     },
     async getWeather() {
       this.disabledSearch = true;
+      this.preloader = true;
       const apiKey = "7efa332cf48aeb9d2d391a51027f1a71";
 
       if (this.cityInput && this.countryInput) {
@@ -208,6 +211,7 @@ export default {
             chartType: "Day",
           };
 
+          this.preloader = false;
           return weatherData;
         } else {
           this.handleError(data);
@@ -436,5 +440,63 @@ span.pac-item-query {
 .pac-logo:after {
   background-image: none !important;
   height: 0px;
+}
+
+.loader,
+.loader:before,
+.loader:after {
+  border-radius: 50%;
+  width: 2.5em;
+  height: 2.5em;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+  -webkit-animation: load7 1.8s infinite ease-in-out;
+  animation: load7 1.8s infinite ease-in-out;
+}
+.loader {
+  color: #d0dbff;
+  font-size: 10px;
+  margin: 80px auto;
+  position: relative;
+  text-indent: -9999em;
+  -webkit-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-animation-delay: -0.16s;
+  animation-delay: -0.16s;
+}
+.loader:before,
+.loader:after {
+  content: '';
+  position: absolute;
+  top: 0;
+}
+.loader:before {
+  left: -3.5em;
+  -webkit-animation-delay: -0.32s;
+  animation-delay: -0.32s;
+}
+.loader:after {
+  left: 3.5em;
+}
+@-webkit-keyframes load7 {
+  0%,
+  80%,
+  100% {
+    box-shadow: 0 2.5em 0 -1.3em;
+  }
+  40% {
+    box-shadow: 0 2.5em 0 0;
+  }
+}
+@keyframes load7 {
+  0%,
+  80%,
+  100% {
+    box-shadow: 0 2.5em 0 -1.3em;
+  }
+  40% {
+    box-shadow: 0 2.5em 0 0;
+  }
 }
 </style>

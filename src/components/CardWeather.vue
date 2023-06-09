@@ -56,6 +56,7 @@ section {
 }
 
 h1 {
+  color: #d0dbff;
   font-size: 30px;
   font-weight: 400;
   margin: 20px 0;
@@ -68,6 +69,7 @@ h1.temp {
   font-weight: 600;
 }
 h2 {
+  color: #d0dbff;
   margin: 0;
   font-size: 24px;
   font-weight: 400;
