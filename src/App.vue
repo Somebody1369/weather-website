@@ -1,6 +1,7 @@
 <template>
   <main>
     <nav>
+      <img class="logo" src="@/assets/logo.png" alt="logo"/>
       <router-link to="/">Home</router-link> |
       <router-link to="/favorites">Favorites</router-link>
     </nav>
@@ -10,6 +11,11 @@
 
 <style lang="css">
 @import "./assets/styles/index.css";
+
+.logo {
+  height: 50px;
+}
+
 
 nav {
   padding: 30px;
